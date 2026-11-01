@@ -1,0 +1,7 @@
+{
+  "entity": "supplier_skus",
+  "records": [
+    {"supplier_id": 4, "sku": "SENSOR-X"},
+    {"supplier_id": 3, "sku": "BATTERY-M"}
+  ]
+}

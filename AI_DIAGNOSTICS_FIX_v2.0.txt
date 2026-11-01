@@ -1,0 +1,67 @@
+NAVIPULSE AI DIAGNOSTICS FIX v2.0
+================================
+
+WHAT THIS PATCH FIXES
+- Previously "LIVE AI • ENABLED" meant an environment variable existed, not that a model had replied.
+- Previously HTTP 401/403/404/429, network errors, malformed responses and the 9-second timeout all turned into the same silent fallback.
+- The new code loads the root .env file without needing python-dotenv.
+- The new UI status says "AI KEY DETECTED · CONNECTION NOT YET VERIFIED" until a real request succeeds.
+- After a successful request it displays "LIVE AI · CONNECTED".
+- On failure it displays the safe, actionable cause in the executive brief and keeps the deterministic summary.
+- No API keys are ever displayed, logged or stored in the SQLite database by this patch.
+- The AI never changes warehouse inventory, SLA calculations, approvals, or execution.
+
+INSTALLATION — WINDOWS CMD (not PowerShell):
+1. Stop Reflex using Ctrl+C.
+2. Download NaviPulse_AI_Diagnostics_Patch_v2.0.zip to your Downloads folder.
+3. From Command Prompt:
+
+   cd /d "C:\Users\NathiyaShree\hackathon\DisruptionIQ"
+   powershell.exe -NoProfile -Command "Expand-Archive -LiteralPath '%USERPROFILE%\Downloads\NaviPulse_AI_Diagnostics_Patch_v2.0.zip' -DestinationPath '.' -Force"
+
+4. In your PROJECT ROOT (same folder as rxconfig.py), create or update .env:
+
+   OPENAI_API_KEY=your-real-api-key-here
+   OPENAI_MODEL=gpt-4.1-mini
+
+   IMPORTANT: Don't paste the key into chat or commit .env to a repo.
+   Windows CMD `set OPENAI_API_KEY=...` environment variables take precedence
+   if set. A key set in a different terminal might not reach Reflex.
+
+5. Check the API connection WITHOUT launching Reflex:
+
+   python scripts\check_ai.py
+
+   It makes one short live OpenAI API request and may incur a small charge.
+   The diagnostic reports success or a specific reason such as 401, 429,
+   404, network timeout, or missing key. It does not print the API key.
+
+6. Run the tests:
+
+   python -m unittest discover -s tests -p test_ai_diagnostics.py -v
+
+7. Start NaviPulse:
+
+   reflex run
+
+   Log in, open an at-risk order -> Recovery studio -> GENERATE AI BRIEF.
+   The status only says LIVE AI · CONNECTED after an actual successful response.
+
+POSSIBLE ERRORS
+401  Invalid or revoked API key; create a key at https://platform.openai.com/api-keys
+403  API project/organization permissions
+404  Model not available on the project; verify OPENAI_MODEL
+429  Billing credits depleted or API rate limits; see https://platform.openai.com/settings/organization/billing/overview
+Network/timeout  Check internet/proxy/firewall; the app uses HTTPS to api.openai.com
+
+Note: The OpenAI API is billed separately from ChatGPT subscriptions.
+
+PATCH FILES
+- disruption_iq/ai.py (replaced)
+- disruption_iq/state.py (only ask_ai uses returned status; preserves v1.9 role and workflow logic)
+- scripts/check_ai.py (new standalone diagnostic)
+- tests/test_ai_diagnostics.py (new non-network tests)
+
+We tested syntax + 9 AI diagnostic tests. We did not validate an actual OpenAI API
+request because no API key is available in this environment. Browser/Reflex
+runtime must be verified on your Windows machine.
